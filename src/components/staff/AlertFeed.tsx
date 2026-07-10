@@ -1,3 +1,11 @@
+/**
+ * @module components/staff/AlertFeed
+ *
+ * Prioritized alert queue for the staff command center. Displays AI-derived
+ * alerts sorted by severity with one-click execute buttons that close the
+ * decision loop by applying recommended mitigations to live venue state.
+ */
+
 'use client';
 
 import { Play, ShieldAlert, Leaf } from 'lucide-react';
@@ -5,12 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { OpsAlert } from '@/types';
 
+/** Props for the AlertFeed component. */
 export interface AlertFeedProps {
-  alerts: OpsAlert[];
-  onExecute: (alert: OpsAlert) => void;
-  executedIds: string[];
+  readonly alerts: OpsAlert[];
+  readonly onExecute: (alert: OpsAlert) => void;
+  readonly executedIds: readonly string[];
 }
 
+/** Prioritized alert queue with executable AI-recommended actions. */
 export function AlertFeed({ alerts, onExecute, executedIds }: AlertFeedProps): React.ReactElement {
   return (
     <section aria-labelledby="alerts-heading" className="grid gap-3">

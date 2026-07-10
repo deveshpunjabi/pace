@@ -1,11 +1,23 @@
+/**
+ * @module components/ui/quick-action
+ *
+ * Pill-shaped quick-action chip button used for pre-composed prompts in the
+ * fan concierge and staff copilot. Supports an optional icon and adapts to
+ * the glass-morphism design system.
+ */
+
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Props for the QuickAction component, extending native button attributes. */
 export interface QuickActionProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon?: React.ReactNode;
-  label: string;
+  /** Optional icon element displayed before the label. */
+  readonly icon?: React.ReactNode;
+  /** Visible text label for the chip. */
+  readonly label: string;
 }
 
+/** Pill-shaped chip button for quick-action prompts with optional icon. */
 export function QuickAction({ icon, label, className, ...props }: QuickActionProps): React.ReactElement {
   return (
     <button

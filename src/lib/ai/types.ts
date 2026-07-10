@@ -1,16 +1,27 @@
+/**
+ * @module lib/ai/types
+ *
+ * Defines the AI provider abstraction layer. This interface lets the
+ * application swap between a deterministic mock (zero-cost, offline) and a
+ * real Vertex AI provider without changing any consumer code.
+ */
+
 import type { Language, UserRole } from '@/types';
 
+/** Identifies which AI backend is active — used in health probes and response headers. */
 export type AiMode = 'vertex' | 'mock';
 
 /**
- * A single grounded generation request. `context` is server-derived live
- * venue state; `messages` is untrusted free-text intent from the client.
+ * A single grounded generation request sent to the AI provider.
+ * `context` is server-derived live venue state (trusted); `messages` is
+ * untrusted free-text intent from the client — the split keeps the trust
+ * boundary explicit.
  */
 export interface AiChatRequest {
-  role: UserRole;
-  language: Language;
-  context: string;
-  messages: { role: 'user' | 'assistant'; content: string }[];
+  readonly role: UserRole;
+  readonly language: Language;
+  readonly context: string;
+  readonly messages: ReadonlyArray<{ readonly role: 'user' | 'assistant'; readonly content: string }>;
 }
 
 /**
@@ -20,6 +31,6 @@ export interface AiChatRequest {
  */
 export interface AiProvider {
   readonly mode: AiMode;
-  /** Streams the grounded answer token-by-token. */
+  /** Streams the grounded answer token-by-token for real-time UI updates. */
   streamChat(request: AiChatRequest): AsyncIterable<string>;
 }

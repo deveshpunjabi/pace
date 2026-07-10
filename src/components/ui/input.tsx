@@ -1,8 +1,17 @@
+/**
+ * @module components/ui/input
+ *
+ * Styled text input with dark theme, focus ring, and full HTML input API
+ * pass-through. Used for chat message entry across fan and staff interfaces.
+ */
+
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+/** Props for the Input component, extending native input attributes. */
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
+/** Dark-themed text input with accessible focus styling. */
 export function Input({ className, ...props }: InputProps): React.ReactElement {
   return (
     <input

@@ -17,20 +17,20 @@ Two personas, two real journeys around **one shared, coherent scenario** (East C
 - **Fan (mobile):** arriving visitor → accessible route to seat → nearest low-queue amenities → help in EN/ES/FR → safe exit & greenest transit.
 - **Staff (control room):** situational awareness (KPIs + heatmap) → alert triage → AI mitigation plan → **execute action** (redirect crowd / cut idle HVAC) → venue state responds.
 
-## Problem-statement coverage
+## Problem Statement Coverage
 
-All eight capability areas named in the brief map to a concrete, working feature. Coverage is machine-verifiable at [`GET /api/capabilities`](#api) and asserted by tests (`capabilities.test.ts`).
+All eight capability areas named in the Challenge 4 brief map to a concrete, working feature. Coverage is machine-verifiable at [`GET /api/capabilities`](#api) and asserted by tests (`capabilities.test.ts`).
 
-| Area (verbatim)            | Feature                                                       | Surface                               |
-| -------------------------- | ------------------------------------------------------------- | ------------------------------------- |
-| Navigation                 | Step-by-step accessible wayfinding grounded in live context   | `FanChat` + `/api/chat`               |
-| Crowd management           | Live per-sector density heatmap, 85% alert threshold          | `OpsMap` + `opsService.deriveAlerts`  |
-| Accessibility              | Step-free routing (Gate C flagged) + ARIA-first UI, skip link | `venue.SECTOR_PROFILES` + prompts     |
-| Transportation             | Post-match transit with fastest/greenest options              | `TRANSIT_OPTIONS` + mock provider     |
-| Sustainability             | HVAC reduction for idle sectors + venue sustainability score  | `SustainabilityMeter` + `opsService`  |
-| Multilingual assistance    | Native EN/ES/FR concierge                                     | `FanChat` language tabs + prompts     |
-| Operational intelligence   | KPI bar (attendance, density, alerts, sustainability)         | `KpiBar` + `opsService.computeKpis`   |
-| Real-time decision support | Streamed AI plans + one-click executable actions              | `StaffDashboard` + `applyAlertAction` |
+| #   | Area (verbatim from brief)     | Feature                                                           | Primary File(s)                                                                                                   | How It Solves the Area                                                                                                                                 |
+| --- | ------------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Navigation**                 | Step-by-step accessible wayfinding grounded in live venue context | `src/components/fan/FanChat.tsx`, `src/lib/services/chatService.ts`, `src/lib/ai/prompts.ts`                      | AI generates turn-by-turn directions using server-injected live sector data (gates, lifts, density). Never invents routes.                             |
+| 2   | **Crowd management**           | Live per-sector density heatmap with 85% alert threshold          | `src/components/staff/OpsMap.tsx`, `src/lib/services/opsService.ts`, `src/lib/simulation/liveSignals.ts`          | Real-time density grid color-coded by severity. Sectors ≥85% trigger high alerts with one-click redirect actions.                                      |
+| 3   | **Accessibility**              | Step-free routing (Gate C flagged) + ARIA-first UI                | `src/lib/data/venue.ts` (stepFree flags), `src/lib/ai/prompts.ts`, `src/components/fan/FanChat.tsx`               | Each sector has a stepFree boolean. AI never routes wheelchair users via stairs. UI uses skip links, ARIA roles, live regions.                         |
+| 4   | **Transportation**             | Post-match transit guidance with fastest/greenest options         | `src/lib/data/venue.ts` (TRANSIT_OPTIONS), `src/lib/ai/mockProvider.ts`                                           | Three transit modes ranked by ETA and carbon footprint. AI recommends greenest option (NJ Transit Rail, 0.4 kg CO2).                                   |
+| 5   | **Sustainability**             | HVAC reduction for idle sectors + venue sustainability score      | `src/components/staff/SustainabilityMeter.tsx`, `src/lib/services/opsService.ts`                                  | Sectors <30% occupancy trigger HVAC-cut alerts. One-click execution marks sectors reduced. SVG ring gauge shows venue-wide score.                      |
+| 6   | **Multilingual assistance**    | Native EN/ES/FR concierge with per-response language              | `src/components/fan/FanChat.tsx` (language tabs), `src/lib/ai/prompts.ts`, `src/lib/ai/mockProvider.ts`           | ARIA tab language selector. System prompt enforces response language. Quick-actions and greetings pre-localized per language.                          |
+| 7   | **Operational intelligence**   | Venue KPI bar (attendance, density, alerts, sustainability)       | `src/components/staff/KpiBar.tsx`, `src/lib/services/opsService.ts`                                               | Four KPIs computed from live sector data with severity tones. Recomputed on every 6-second signal refresh for continuous awareness.                    |
+| 8   | **Real-time decision support** | Streamed AI mitigation plans + one-click executable actions       | `src/components/staff/StaffDashboard.tsx`, `src/components/staff/AlertFeed.tsx`, `src/lib/services/opsService.ts` | AI generates prioritized alerts with pre-planned actions. Execute button mutates venue state in real time. Staff AI copilot streams freeform guidance. |
 
 ## Architecture
 

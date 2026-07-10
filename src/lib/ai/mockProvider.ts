@@ -1,6 +1,26 @@
+/**
+ * @module lib/ai/mockProvider
+ *
+ * Deterministic, offline AI provider that requires zero secrets and incurs
+ * zero cost. Returns grounded but pre-composed answers for every scenario the
+ * demo exercises, enabling full-stack testing and live demos without any
+ * external API dependency.
+ */
+
 import type { AiChatRequest, AiProvider } from '@/lib/ai/types';
 import { REDIRECT_TARGET } from '@/lib/data/venue';
 
+/** Simulated token-streaming delay in milliseconds between emitted tokens. */
+const TOKEN_DELAY_MS = 8;
+
+/**
+ * Composes a deterministic answer based on the request role, language, and
+ * latest user message content. Covers navigation, transit, amenities, and
+ * staff operations — the four core demo paths.
+ *
+ * @param request - The incoming chat request with role, language, and messages.
+ * @returns A pre-composed grounded answer string.
+ */
 function buildAnswer(request: AiChatRequest): string {
   const latest = request.messages[request.messages.length - 1]?.content.toLowerCase() ?? '';
 
@@ -42,17 +62,28 @@ function buildAnswer(request: AiChatRequest): string {
   return 'Use Gate N2, continue to Accessible Lift A, exit at Level 2, then follow blue signs to Section 142. Avoid stairs; volunteers can assist nearby.';
 }
 
-/** Deterministic, offline provider — zero secrets, zero cost, fully testable. */
+/**
+ * Deterministic, offline AI provider. Streams pre-composed answers
+ * token-by-token to simulate real streaming behaviour without network calls.
+ * Used as the default when no Vertex AI credentials are configured.
+ */
 export class MockAiProvider implements AiProvider {
   public readonly mode = 'mock' as const;
 
+  /**
+   * Streams a grounded answer by splitting it into whitespace-delimited tokens
+   * with a small delay between each, mimicking real LLM streaming.
+   *
+   * @param request - The chat request containing role, language, and messages.
+   * @yields Individual tokens of the composed answer.
+   */
   public async *streamChat(request: AiChatRequest): AsyncIterable<string> {
     const answer = buildAnswer(request);
     const tokens = answer.split(/(\s+)/).filter(Boolean);
 
     for (const token of tokens) {
       yield token;
-      await new Promise((resolve) => setTimeout(resolve, 8));
+      await new Promise((resolve) => setTimeout(resolve, TOKEN_DELAY_MS));
     }
   }
 }

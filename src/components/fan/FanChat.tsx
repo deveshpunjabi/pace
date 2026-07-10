@@ -1,3 +1,12 @@
+/**
+ * @module components/fan/FanChat
+ *
+ * Multilingual fan concierge chat component. Provides a streaming AI
+ * conversation interface with language tabs (EN/ES/FR), quick-action chips,
+ * and an ARIA-accessible message log. Communicates with `/api/chat` and
+ * streams responses token-by-token for responsive UX.
+ */
+
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
@@ -9,25 +18,32 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { chatSchema } from '@/lib/validators/schemas';
 import type { Language, Message } from '@/types';
 
-const languageLabels: Record<Language, string> = {
+/** Maximum number of messages retained in the visible conversation window. */
+const MAX_VISIBLE_MESSAGES = 10;
+
+/** Human-readable labels for each supported language tab. */
+const languageLabels: Readonly<Record<Language, string>> = {
   en: 'English',
   es: 'Espanol',
   fr: 'Francais'
 };
 
-const greetings: Record<Language, string> = {
+/** Initial greeting shown by the assistant for each language. */
+const greetings: Readonly<Record<Language, string>> = {
   en: "Hi, I'm PACE. I can help with accessible routes, food and restrooms, transit, sustainability, and stadium rules.",
   es: 'Hola, soy PACE. Puedo ayudarte con rutas accesibles, comida y banos, transporte, sostenibilidad y reglas del estadio.',
   fr: 'Bonjour, je suis PACE. Je peux aider avec les acces, la restauration, le transport, la durabilite et le reglement.'
 };
 
+/** A quick-action chip definition with icon, label, and pre-composed query. */
 interface QuickPrompt {
-  icon: typeof Accessibility;
-  label: string;
-  query: string;
+  readonly icon: typeof Accessibility;
+  readonly label: string;
+  readonly query: string;
 }
 
-const quickPrompts: Record<Language, QuickPrompt[]> = {
+/** Pre-composed quick-action prompts localised per language. */
+const quickPrompts: Readonly<Record<Language, readonly QuickPrompt[]>> = {
   en: [
     {
       icon: Accessibility,
@@ -68,6 +84,13 @@ const quickPrompts: Record<Language, QuickPrompt[]> = {
   ]
 };
 
+/**
+ * Reads a streaming fetch response and emits tokens to a callback as they
+ * arrive. Falls back to full-text read if no readable stream is available.
+ *
+ * @param response - The fetch response with a readable body.
+ * @param onToken - Callback invoked with each decoded text chunk.
+ */
 async function readStream(response: Response, onToken: (token: string) => void): Promise<void> {
   const reader = response.body?.getReader();
   const decoder = new TextDecoder();
@@ -89,6 +112,7 @@ async function readStream(response: Response, onToken: (token: string) => void):
   }
 }
 
+/** Multilingual fan concierge chat interface with streaming AI responses. */
 export function FanChat(): React.ReactElement {
   const [language, setLanguage] = useState<Language>('es');
   const [input, setInput] = useState<string>(quickPrompts.es[0].query);
@@ -96,11 +120,13 @@ export function FanChat(): React.ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const visibleMessages = useMemo(() => messages.slice(-10), [messages]);
+  const visibleMessages = useMemo(() => messages.slice(-MAX_VISIBLE_MESSAGES), [messages]);
 
   async function send(text: string): Promise<void> {
     const trimmed = text.trim();
-    const nextMessages: Message[] = [...messages, { role: 'user' as const, content: trimmed }].slice(-10);
+    const nextMessages: Message[] = [...messages, { role: 'user' as const, content: trimmed }].slice(
+      -MAX_VISIBLE_MESSAGES
+    );
     const payload = { messages: nextMessages, language, userRole: 'fan' as const };
     const parsed = chatSchema.safeParse(payload);
 
@@ -122,7 +148,7 @@ export function FanChat(): React.ReactElement {
       });
 
       if (!response.ok) {
-        throw new Error('PACE request failed');
+        throw new Error(`PACE request failed with status ${response.status}`);
       }
 
       await readStream(response, (token) => {
@@ -130,10 +156,12 @@ export function FanChat(): React.ReactElement {
           const copy = [...current];
           const last = copy[copy.length - 1];
           copy[copy.length - 1] = { ...last, content: `${last.content}${token}` };
-          return copy.slice(-10);
+          return copy.slice(-MAX_VISIBLE_MESSAGES);
         });
       });
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[FanChat] Stream error:', message);
       setError('PACE could not stream a response. Try again from the nearest help desk or volunteer point.');
     } finally {
       setIsLoading(false);

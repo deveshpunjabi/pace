@@ -1,8 +1,17 @@
+/**
+ * @module app/staff/page
+ *
+ * Staff operations landing page. Wraps the StaffDashboard command center
+ * component with navigation back to role selection. Serves as the entry
+ * point for the staff persona journey.
+ */
+
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { StaffDashboard } from '@/components/staff/StaffDashboard';
 import { Button } from '@/components/ui/button';
 
+/** Staff command center page with back navigation and dashboard. */
 export default function StaffPage(): React.ReactElement {
   return (
     <main className="min-h-screen px-5 py-5">

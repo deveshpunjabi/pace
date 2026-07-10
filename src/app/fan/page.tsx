@@ -1,24 +1,42 @@
+/**
+ * @module app/fan/page
+ *
+ * Mobile fan landing page. Displays a compact density mini-map of all sectors
+ * and the FanChat concierge below it. Serves as the entry point for the
+ * fan persona journey.
+ */
+
 import Link from 'next/link';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { FanChat } from '@/components/fan/FanChat';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { VENUE_NAME } from '@/lib/data/venue';
+import { CROWD_ALERT_THRESHOLD, VENUE_NAME } from '@/lib/data/venue';
 import { generateLiveSignals } from '@/lib/simulation/liveSignals';
 
+/** Density threshold for the 'moderate' (amber) color band on the mini-map. */
+const MODERATE_DENSITY_THRESHOLD = 60;
+
+/**
+ * Returns a Tailwind background class based on sector density level.
+ *
+ * @param density - Current density percentage (0-100).
+ * @returns CSS class string for the density indicator color.
+ */
 function sectorColor(density: number): string {
-  if (density >= 85) {
+  if (density >= CROWD_ALERT_THRESHOLD) {
     return 'bg-red-400';
   }
 
-  if (density >= 60) {
+  if (density >= MODERATE_DENSITY_THRESHOLD) {
     return 'bg-amber-400';
   }
 
   return 'bg-emerald-400';
 }
 
+/** Fan mobile page with density mini-map and AI concierge chat. */
 export default function FanPage(): React.ReactElement {
   const sectors = generateLiveSignals();
 

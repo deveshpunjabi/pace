@@ -1,22 +1,46 @@
+/**
+ * @module components/staff/OpsMap
+ *
+ * Live crowd density heatmap for the staff operations center. Displays each
+ * sector as a color-coded card with density bar, trend indicator, and HVAC
+ * status. Critical sectors (≥85%) pulse to draw operator attention.
+ */
+
 'use client';
 
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { DensityTrend, StadiumSector } from '@/types';
+import { CROWD_ALERT_THRESHOLD } from '@/lib/data/venue';
 
+/** Density threshold for 'warn' visual tone. */
+const WARN_DENSITY_THRESHOLD = 60;
+
+/**
+ * Returns visual tone classes (ring, bar, label) based on sector density.
+ *
+ * @param density - Current density percentage (0-100).
+ * @returns Object with CSS class strings for ring, bar, and badge label.
+ */
 function tone(density: number): { ring: string; bar: string; label: 'critical' | 'warn' | 'good' } {
-  if (density >= 85) {
+  if (density >= CROWD_ALERT_THRESHOLD) {
     return { ring: 'border-red-400/40 bg-red-500/10', bar: 'bg-red-400', label: 'critical' };
   }
 
-  if (density >= 60) {
+  if (density >= WARN_DENSITY_THRESHOLD) {
     return { ring: 'border-amber-400/40 bg-amber-500/10', bar: 'bg-amber-400', label: 'warn' };
   }
 
   return { ring: 'border-emerald-400/40 bg-emerald-500/10', bar: 'bg-emerald-400', label: 'good' };
 }
 
-function TrendIcon({ trend }: { trend: DensityTrend }): React.ReactElement {
+/**
+ * Renders the appropriate trend arrow icon based on density direction.
+ *
+ * @param props - Contains the trend direction.
+ * @returns An SVG icon indicating rising, falling, or steady trend.
+ */
+function TrendIcon({ trend }: { readonly trend: DensityTrend }): React.ReactElement {
   if (trend === 'rising') {
     return <ArrowUpRight className="h-4 w-4 text-red-300" aria-hidden="true" />;
   }
@@ -28,10 +52,12 @@ function TrendIcon({ trend }: { trend: DensityTrend }): React.ReactElement {
   return <Minus className="h-4 w-4 text-slate-400" aria-hidden="true" />;
 }
 
+/** Props for the OpsMap component. */
 export interface OpsMapProps {
-  sectors: StadiumSector[];
+  readonly sectors: StadiumSector[];
 }
 
+/** Live crowd density grid with per-sector cards and progress bars. */
 export function OpsMap({ sectors }: OpsMapProps): React.ReactElement {
   return (
     <section aria-labelledby="ops-map-heading" className="grid gap-4">
@@ -48,7 +74,7 @@ export function OpsMap({ sectors }: OpsMapProps): React.ReactElement {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {sectors.map((sector) => {
           const { ring, bar, label } = tone(sector.density);
-          const isCritical = sector.density >= 85;
+          const isCritical = sector.density >= CROWD_ALERT_THRESHOLD;
 
           return (
             <article

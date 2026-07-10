@@ -1,29 +1,41 @@
+/**
+ * @module components/ui/stat-card
+ *
+ * KPI stat card with a tone-colored accent bar, icon, value, and hint text.
+ * Used by the KpiBar to display attendance, density, alerts, and
+ * sustainability metrics in the staff dashboard.
+ */
+
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import type { KpiTone } from '@/types';
 
-const toneAccent: Record<KpiTone, string> = {
+/** Accent text color map for each KPI tone. */
+const toneAccent: Readonly<Record<KpiTone, string>> = {
   neutral: 'text-cyan-300',
   good: 'text-emerald-300',
   warn: 'text-amber-300',
   critical: 'text-red-300'
 };
 
-const toneBar: Record<KpiTone, string> = {
+/** Left-edge bar color map for each KPI tone. */
+const toneBar: Readonly<Record<KpiTone, string>> = {
   neutral: 'bg-cyan-400',
   good: 'bg-emerald-400',
   warn: 'bg-amber-400',
   critical: 'bg-red-400'
 };
 
+/** Props for the StatCard component. */
 export interface StatCardProps {
-  label: string;
-  value: string;
-  hint: string;
-  tone?: KpiTone;
-  icon?: React.ReactNode;
+  readonly label: string;
+  readonly value: string;
+  readonly hint: string;
+  readonly tone?: KpiTone;
+  readonly icon?: React.ReactNode;
 }
 
+/** Single KPI stat card with colored accent bar and optional icon. */
 export function StatCard({ label, value, hint, tone = 'neutral', icon }: StatCardProps): React.ReactElement {
   return (
     <div className="glass relative overflow-hidden rounded-2xl p-4">

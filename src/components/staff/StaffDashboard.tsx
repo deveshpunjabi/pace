@@ -1,3 +1,12 @@
+/**
+ * @module components/staff/StaffDashboard
+ *
+ * Staff operations command center. Combines a live KPI bar, crowd density
+ * heatmap, prioritized alert feed, sustainability meter, and an AI copilot
+ * chat into a single dashboard. Polling refreshes sector data every 6 seconds
+ * and the execute-action loop closes the decision cycle in real time.
+ */
+
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
@@ -16,12 +25,26 @@ import { generateLiveSignals } from '@/lib/simulation/liveSignals';
 import { chatSchema } from '@/lib/validators/schemas';
 import type { Message, OpsAlert, StadiumSector } from '@/types';
 
-const quickCommands = [
+/** Polling interval for live signal refresh in milliseconds. */
+const SIGNAL_POLL_INTERVAL_MS = 6_000;
+
+/** Pause duration after an execute action, so the operator sees the result. */
+const EXECUTE_PAUSE_MS = 9_000;
+
+/** Maximum messages retained in the staff conversation window. */
+const MAX_STAFF_MESSAGES = 10;
+
+/** Pre-composed quick commands for the staff AI copilot. */
+const quickCommands: readonly string[] = [
   'Generate a mitigation plan for the busiest sector.',
   'Draft a trilingual gate announcement for a redirect.',
   'Recommend sustainability actions for idle sectors.'
 ];
 
+/**
+ * Reads a streaming fetch response and emits tokens to a callback as they
+ * arrive. Falls back to full-text read if no readable stream is available.
+ */
 async function readStream(response: Response, onToken: (token: string) => void): Promise<void> {
   const reader = response.body?.getReader();
   const decoder = new TextDecoder();
@@ -43,6 +66,7 @@ async function readStream(response: Response, onToken: (token: string) => void):
   }
 }
 
+/** Staff operations command center with live data, alerts, and AI copilot. */
 export function StaffDashboard(): React.ReactElement {
   const [sectors, setSectors] = useState<StadiumSector[]>(() => generateLiveSignals());
   const [executedIds, setExecutedIds] = useState<string[]>([]);
@@ -67,7 +91,7 @@ export function StaffDashboard(): React.ReactElement {
 
     const intervalId = window.setInterval(() => {
       setSectors(generateLiveSignals(Date.now()));
-    }, 6000);
+    }, SIGNAL_POLL_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
   }, [paused]);
@@ -78,11 +102,13 @@ export function StaffDashboard(): React.ReactElement {
     setSectors((current) => applyAlertAction(current, alert));
     setExecutedIds((current) => (current.includes(alert.id) ? current : [...current, alert.id]));
     setPaused(true);
-    window.setTimeout(() => setPaused(false), 9000);
+    window.setTimeout(() => setPaused(false), EXECUTE_PAUSE_MS);
   }
 
   async function send(text: string): Promise<void> {
-    const nextMessages: Message[] = [...messages, { role: 'user' as const, content: text.trim() }].slice(-10);
+    const nextMessages: Message[] = [...messages, { role: 'user' as const, content: text.trim() }].slice(
+      -MAX_STAFF_MESSAGES
+    );
     const payload = { messages: nextMessages, language: 'en' as const, userRole: 'staff' as const };
     const parsed = chatSchema.safeParse(payload);
 
@@ -104,7 +130,7 @@ export function StaffDashboard(): React.ReactElement {
       });
 
       if (!response.ok) {
-        throw new Error('PACE staff request failed');
+        throw new Error(`PACE staff request failed with status ${response.status}`);
       }
 
       await readStream(response, (token) => {
@@ -112,10 +138,12 @@ export function StaffDashboard(): React.ReactElement {
           const copy = [...current];
           const last = copy[copy.length - 1];
           copy[copy.length - 1] = { ...last, content: `${last.content}${token}` };
-          return copy.slice(-10);
+          return copy.slice(-MAX_STAFF_MESSAGES);
         });
       });
-    } catch {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[StaffDashboard] Stream error:', message);
       setError('PACE could not stream a staff response. Keep active SOPs in place and retry.');
     } finally {
       setIsLoading(false);
@@ -157,7 +185,7 @@ export function StaffDashboard(): React.ReactElement {
 
             <ScrollArea className="h-[360px] rounded-xl border border-white/10 bg-slate-950/50 p-3">
               <div aria-live="polite" aria-label="PACE staff conversation" className="grid gap-3" role="log">
-                {messages.slice(-10).map((message, index) => (
+                {messages.slice(-MAX_STAFF_MESSAGES).map((message, index) => (
                   <article
                     className="rounded-xl bg-white/5 p-3"
                     key={`${message.role}-${index}-${message.content.slice(0, 10)}`}

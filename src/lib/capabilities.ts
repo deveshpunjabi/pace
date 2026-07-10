@@ -1,19 +1,32 @@
+/**
+ * @module lib/capabilities
+ *
+ * Machine-verifiable mapping of every Challenge 4 capability area to a
+ * concrete feature and its implementation surface. Exposed via
+ * `GET /api/capabilities` and asserted by unit tests so problem-statement
+ * alignment is provable, not just claimed.
+ */
+
 import type { UserRole } from '@/types';
 
+/**
+ * A single capability area from the Challenge 4 brief, mapped to the feature
+ * that satisfies it and the code surface that implements it.
+ */
 export interface Capability {
-  id: string;
-  area: string;
-  personas: UserRole[];
-  feature: string;
-  surface: string;
+  readonly id: string;
+  readonly area: string;
+  readonly personas: readonly UserRole[];
+  readonly feature: string;
+  readonly surface: string;
 }
 
 /**
- * Every capability area named in the Challenge 4 brief, each mapped to a
- * concrete feature and the surface that implements it. Exposed via
- * /api/capabilities and asserted by tests so alignment is machine-verifiable.
+ * Complete set of capabilities required by the Smart Stadiums & Tournament
+ * Operations brief. Each entry maps verbatim area text to the working feature
+ * and its implementation surface in this codebase.
  */
-export const CAPABILITIES: Capability[] = [
+export const CAPABILITIES: readonly Capability[] = [
   {
     id: 'navigation',
     area: 'Navigation',

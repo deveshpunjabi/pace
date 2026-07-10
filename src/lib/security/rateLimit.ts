@@ -1,21 +1,55 @@
+/**
+ * @module lib/security/rateLimit
+ *
+ * Fixed-window per-key rate limiter. In-memory by design for a single demo
+ * instance; a multi-replica deployment should back this with Redis/Upstash.
+ * Keeps abusive clients from exhausting AI API quotas.
+ */
+
+/** Default maximum requests allowed per window. */
+const DEFAULT_LIMIT = 20;
+
+/** Default rate-limit window duration in milliseconds (1 minute). */
+const DEFAULT_WINDOW_MS = 60_000;
+
+/**
+ * Internal bucket tracking request count and window expiry for a single key.
+ */
 interface Bucket {
   count: number;
   resetAt: number;
 }
 
+/** In-memory store of all active rate-limit buckets, keyed by client identifier. */
 const buckets = new Map<string, Bucket>();
 
+/**
+ * Result of a rate-limit check, indicating whether the request is allowed
+ * and how many requests remain in the current window.
+ */
 export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetAt: number;
+  readonly allowed: boolean;
+  readonly remaining: number;
+  readonly resetAt: number;
 }
 
 /**
- * Fixed-window per-key rate limiter. In-memory by design for a single demo
- * instance; a multi-replica deployment should back this with Redis/Upstash.
+ * Checks and increments the rate-limit counter for a given key. Returns
+ * whether the request is allowed, how many requests remain, and when the
+ * window resets.
+ *
+ * @param key - Client identifier to rate-limit against (e.g. IP address).
+ * @param limit - Maximum requests per window (defaults to 20).
+ * @param windowMs - Window duration in milliseconds (defaults to 60 000).
+ * @param now - Current timestamp in epoch milliseconds (injectable for testing).
+ * @returns Rate-limit decision with remaining quota.
  */
-export function rateLimit(key: string, limit = 20, windowMs = 60_000, now: number = Date.now()): RateLimitResult {
+export function rateLimit(
+  key: string,
+  limit: number = DEFAULT_LIMIT,
+  windowMs: number = DEFAULT_WINDOW_MS,
+  now: number = Date.now()
+): RateLimitResult {
   const existing = buckets.get(key);
 
   if (!existing || now >= existing.resetAt) {
@@ -32,7 +66,10 @@ export function rateLimit(key: string, limit = 20, windowMs = 60_000, now: numbe
   return { allowed: true, remaining: limit - existing.count, resetAt: existing.resetAt };
 }
 
-/** Test helper to reset all buckets. */
+/**
+ * Clears all rate-limit buckets. Exposed exclusively for test isolation —
+ * production code must never call this.
+ */
 export function resetRateLimits(): void {
   buckets.clear();
 }

@@ -1,3 +1,11 @@
+/**
+ * @module app/page
+ *
+ * PACE landing page and role selector. Presents the project overview,
+ * Sense → Decide → Act flow explanation, and two role cards (Fan Concierge,
+ * Staff Command Center) that route users into their respective journeys.
+ */
+
 'use client';
 
 import Link from 'next/link';
@@ -43,11 +51,11 @@ const item = {
 
 export default function HomePage(): React.ReactElement {
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main id="main" className="relative min-h-screen overflow-hidden">
       <div aria-hidden="true" className="grid-overlay pointer-events-none absolute inset-0" />
 
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col px-6 py-6">
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between" aria-label="PACE site header">
           <div className="flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-400 text-sm font-black text-slate-950">
               P

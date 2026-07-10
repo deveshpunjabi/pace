@@ -1,3 +1,12 @@
+/**
+ * @module app/api/chat/route
+ *
+ * POST endpoint for the grounded fan/staff chat. Applies security guards,
+ * validates the payload with Zod, and streams the AI response token-by-token.
+ * This is the only AI-cost-incurring route and is therefore the most
+ * heavily guarded.
+ */
+
 import { NextResponse } from 'next/server';
 import { resolveAiProvider } from '@/lib/ai/provider';
 import { enforceRequestGuards } from '@/lib/security/guard';
@@ -6,6 +15,13 @@ import { chatSchema } from '@/lib/validators/schemas';
 
 export const runtime = 'nodejs';
 
+/**
+ * Handles POST requests for the grounded chat API. Guards the request,
+ * validates JSON, parses the payload, and streams the AI response.
+ *
+ * @param request - Incoming HTTP request.
+ * @returns A streaming text/plain response or a JSON error.
+ */
 export async function POST(request: Request): Promise<Response> {
   const rawBody = await request.text();
   const guard = enforceRequestGuards(request, rawBody);
@@ -18,7 +34,9 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     body = JSON.parse(rawBody);
-  } catch {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown parse error';
+    console.error('[chat/route] JSON parse failure:', message);
     return NextResponse.json({ error: 'Malformed JSON body.', code: 'invalid_json' }, { status: 400 });
   }
 

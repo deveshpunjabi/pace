@@ -1,12 +1,30 @@
+/**
+ * @module lib/ai/prompts
+ *
+ * Constructs the grounded system prompt for the AI model. Live venue context
+ * is injected as trusted state while user messages are explicitly labelled
+ * untrusted, ensuring prompt-injection attacks have minimal leverage even if
+ * they bypass the sanitizer.
+ */
+
+// [Challenge 4: Multilingual Assistance + Navigation + Crowd Management + Accessibility + Sustainability]
+// System prompt builder: injects live venue context, enforces language, and sets directives for all 8 areas.
+
 import type { Language, UserRole } from '@/types';
 
-const languageNames: Record<Language, string> = {
+/** Human-readable language names for the system prompt's response-language directive. */
+const LANGUAGE_NAMES: Readonly<Record<Language, string>> = {
   en: 'English',
   es: 'Spanish',
   fr: 'French'
 };
 
-const fewShot: Record<UserRole, { user: string; assistant: string }> = {
+/**
+ * Few-shot examples that demonstrate the desired response style for each
+ * persona. These are baked into the system prompt so the model calibrates
+ * response length and formatting from the first turn.
+ */
+const FEW_SHOT_EXAMPLES: Readonly<Record<UserRole, { readonly user: string; readonly assistant: string }>> = {
   fan: {
     user: 'Necesito una ruta accesible a la seccion 142.',
     assistant:
@@ -20,22 +38,27 @@ const fewShot: Record<UserRole, { user: string; assistant: string }> = {
 };
 
 /**
- * Builds the grounded system prompt. Live `context` is injected as trusted
- * venue state; user messages are explicitly labelled untrusted so the model
- * never treats them as instructions.
+ * Builds the grounded system prompt for the AI model. Live `context` is
+ * injected as trusted venue state; user messages are explicitly labelled
+ * untrusted so the model never treats them as instructions.
+ *
+ * @param role - Whether the current user is a fan or staff operator.
+ * @param language - The language the model must respond in.
+ * @param context - Server-derived live venue context string (trusted).
+ * @returns The complete system prompt string.
  */
 export function generateSystemPrompt(role: UserRole, language: Language, context: string): string {
-  const example = fewShot[role];
+  const example = FEW_SHOT_EXAMPLES[role];
 
   return `You are P.A.C.E., the official GenAI Operations Copilot for FIFA World Cup 2026.
 Current User Role: ${role}
-Response Language Required: ${languageNames[language]}
+Response Language Required: ${LANGUAGE_NAMES[language]}
 
 LIVE VENUE CONTEXT (trusted, server-provided):
 ${context}
 
 CORE DIRECTIVES:
-1. MULTILINGUAL: Respond natively in ${languageNames[language]} and translate stadium terminology accurately.
+1. MULTILINGUAL: Respond natively in ${LANGUAGE_NAMES[language]} and translate stadium terminology accurately.
 2. CROWD MANAGEMENT: If a sector is above 85% density, prioritize safety and suggest immediate redirection.
 3. SUSTAINABILITY: If a sector is below 30% occupancy, recommend reducing HVAC power to save energy.
 4. NAVIGATION: Give clear step-by-step directions based only on the live context above.

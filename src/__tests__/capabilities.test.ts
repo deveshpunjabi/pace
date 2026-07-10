@@ -26,4 +26,10 @@ describe('capabilities alignment map', () => {
       expect(capability.surface.length).toBeGreaterThan(0);
     }
   });
+
+  it('includes a meaningful feature description for every capability', () => {
+    for (const capability of CAPABILITIES) {
+      expect(capability.feature.length).toBeGreaterThan(10);
+    }
+  });
 });
