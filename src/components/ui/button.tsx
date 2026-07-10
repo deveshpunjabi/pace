@@ -8,10 +8,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
-  primary: 'bg-cyan-400 text-slate-950 hover:bg-cyan-300',
-  secondary: 'bg-slate-800 text-slate-50 hover:bg-slate-700',
-  danger: 'bg-red-500 text-white hover:bg-red-400',
-  ghost: 'bg-transparent text-slate-200 hover:bg-slate-800'
+  primary:
+    'bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-950 shadow-[0_8px_24px_-10px_rgba(34,211,238,0.7)] hover:from-cyan-300 hover:to-emerald-300',
+  secondary: 'glass text-slate-100 hover:border-cyan-400/40 hover:text-white',
+  danger:
+    'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-[0_8px_24px_-10px_rgba(244,63,94,0.7)] hover:from-red-400 hover:to-rose-400',
+  ghost: 'bg-transparent text-slate-300 hover:bg-white/5 hover:text-white'
 };
 
 export function Button({ asChild = false, className, variant = 'primary', ...props }: ButtonProps): React.ReactElement {
@@ -20,7 +22,7 @@ export function Button({ asChild = false, className, variant = 'primary', ...pro
   return (
     <Component
       className={cn(
-        'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         className
       )}

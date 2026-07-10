@@ -7,7 +7,9 @@ export interface ScrollAreaProps extends React.ComponentPropsWithoutRef<typeof S
 export function ScrollArea({ className, children, ...props }: ScrollAreaProps): React.ReactElement {
   return (
     <ScrollAreaPrimitive.Root className={cn('overflow-hidden', className)} {...props}>
-      <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">{children}</ScrollAreaPrimitive.Viewport>
+      <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+        {children}
+      </ScrollAreaPrimitive.Viewport>
       <ScrollAreaPrimitive.Scrollbar className="flex touch-none select-none bg-slate-800 p-0.5" orientation="vertical">
         <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-slate-600" />
       </ScrollAreaPrimitive.Scrollbar>
