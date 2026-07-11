@@ -9,7 +9,7 @@
  */
 
 import type { DensityTrend, StadiumSector } from '@/types';
-import { SECTOR_PROFILES, type SectorProfile } from '@/lib/data/venue';
+import { SECTOR_PROFILES, TRANSIT_OPTIONS, type SectorProfile } from '@/lib/data/venue';
 
 /** Possible matchday phase labels that drive crowd pressure curves. */
 export type MatchPhase = 'arrivals' | 'kickoff' | 'first-half' | 'half-time' | 'second-half' | 'egress';
@@ -159,4 +159,45 @@ export function generateLiveSignals(epochMs: number = Date.now()): StadiumSector
       trend: trendFor(profile, epochMs)
     };
   });
+}
+
+/** A transit option with a live, phase-adjusted wait time. */
+export interface LiveTransitStatus {
+  readonly id: string;
+  readonly label: string;
+  readonly etaMinutes: number;
+  readonly carbonKgPerRider: number;
+  readonly greenest: boolean;
+  /** Current crowd load on this option, driven by the matchday phase. */
+  readonly load: 'light' | 'moderate' | 'heavy';
+}
+
+/** Extra minutes added to every transit ETA during the post-match egress surge. */
+const EGRESS_ETA_SURGE_MIN = 14;
+
+/** Extra minutes added around kickoff/half-time arrival peaks. */
+const PEAK_ETA_SURGE_MIN = 6;
+
+/**
+ * Live transit status: the static transit options with wait times adjusted for
+ * the current matchday phase, so post-match egress shows realistic longer waits
+ * rather than a fixed table. Pure function of time like the rest of the sim.
+ *
+ * @param epochMs - Epoch timestamp in milliseconds (defaults to current time).
+ * @returns Transit options with phase-adjusted ETA and load.
+ */
+export function transitStatusAt(epochMs: number = Date.now()): LiveTransitStatus[] {
+  const phase = phaseAt(epochMs);
+  const surge =
+    phase === 'egress' ? EGRESS_ETA_SURGE_MIN : phase === 'kickoff' || phase === 'half-time' ? PEAK_ETA_SURGE_MIN : 0;
+  const load: LiveTransitStatus['load'] = surge >= EGRESS_ETA_SURGE_MIN ? 'heavy' : surge > 0 ? 'moderate' : 'light';
+
+  return TRANSIT_OPTIONS.map((option) => ({
+    id: option.id,
+    label: option.label,
+    etaMinutes: option.etaMinutes + surge,
+    carbonKgPerRider: option.carbonKgPerRider,
+    greenest: option.greenest,
+    load
+  }));
 }

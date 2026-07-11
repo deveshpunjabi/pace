@@ -1,5 +1,5 @@
-import { CYCLE_MS, generateLiveSignals, phaseAt } from '@/lib/simulation/liveSignals';
-import { SECTOR_PROFILES } from '@/lib/data/venue';
+import { CYCLE_MS, generateLiveSignals, phaseAt, transitStatusAt } from '@/lib/simulation/liveSignals';
+import { SECTOR_PROFILES, TRANSIT_OPTIONS } from '@/lib/data/venue';
 
 describe('simulation.generateLiveSignals', () => {
   it('is deterministic: same timestamp yields identical output', () => {
@@ -31,5 +31,25 @@ describe('simulation.generateLiveSignals', () => {
     expect(phases.has('arrivals')).toBe(true);
     expect(phases.has('egress')).toBe(true);
     expect(phases.size).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('simulation.transitStatusAt', () => {
+  it('returns every transit option and preserves the greenest flag', () => {
+    const status = transitStatusAt(0);
+    expect(status).toHaveLength(TRANSIT_OPTIONS.length);
+    expect(status.some((option) => option.greenest)).toBe(true);
+  });
+
+  it('surges wait times and load during post-match egress', () => {
+    const arrivals = transitStatusAt(0); // progress 0 -> arrivals phase
+    const egress = transitStatusAt(115_000); // progress ~0.96 -> egress phase
+
+    const railArrivals = arrivals.find((option) => option.id === 'rail')!;
+    const railEgress = egress.find((option) => option.id === 'rail')!;
+
+    expect(railArrivals.load).toBe('light');
+    expect(railEgress.load).toBe('heavy');
+    expect(railEgress.etaMinutes).toBeGreaterThan(railArrivals.etaMinutes);
   });
 });
