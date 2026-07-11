@@ -20,7 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { QuickAction } from '@/components/ui/quick-action';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { applyAlertAction, computeKpis, deriveAlerts } from '@/lib/services/opsService';
+import { applyAlertAction, buildSituationReport, computeKpis, deriveAlerts } from '@/lib/services/opsService';
 import { generateLiveSignals } from '@/lib/simulation/liveSignals';
 import { chatSchema } from '@/lib/validators/schemas';
 import type { Message, OpsAlert, StadiumSector } from '@/types';
@@ -83,6 +83,7 @@ export function StaffDashboard(): React.ReactElement {
 
   const alerts = useMemo(() => deriveAlerts(sectors), [sectors]);
   const kpis = useMemo(() => computeKpis(sectors, alerts), [sectors, alerts]);
+  const situationReport = useMemo(() => buildSituationReport(sectors, alerts), [sectors, alerts]);
 
   useEffect(() => {
     if (paused) {
@@ -158,6 +159,13 @@ export function StaffDashboard(): React.ReactElement {
   return (
     <div className="grid gap-4">
       <KpiBar kpis={kpis} />
+
+      <section aria-label="AI operational briefing" className="rounded-xl border border-white/10 bg-slate-950/50 p-3">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-300">AI Situation Report</p>
+        <p aria-live="polite" className="mt-1 text-sm leading-6 text-slate-200">
+          {situationReport}
+        </p>
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.85fr)_minmax(420px,1.3fr)_minmax(300px,0.85fr)]">
         <Card>

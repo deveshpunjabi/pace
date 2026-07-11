@@ -8,7 +8,12 @@
  */
 
 import type { OpsAlert, StadiumSector, VenueKpi } from '@/types';
-import { CROWD_ALERT_THRESHOLD, REDIRECT_TARGET, SUSTAINABILITY_IDLE_THRESHOLD } from '@/lib/data/venue';
+import {
+  CROWD_ALERT_THRESHOLD,
+  REDIRECT_TARGET,
+  SUSTAINABILITY_IDLE_THRESHOLD,
+  TRANSIT_OPTIONS
+} from '@/lib/data/venue';
 
 /** Density reduction (percentage points) applied to a redirected sector. */
 const REDIRECT_DENSITY_REDUCTION = 22;
@@ -110,6 +115,43 @@ export function applyAlertAction(sectors: StadiumSector[], alert: OpsAlert): Sta
   }
 
   return sectors;
+}
+
+/**
+ * Synthesizes a short, human-readable situation report from the live snapshot.
+ * Turns raw sector/alert data into the one-glance narrative a control-room lead
+ * needs — busiest sector, crowd/HVAC actions outstanding, and greenest transit —
+ * closing the gap between KPI numbers and an operational decision.
+ *
+ * Pure function of its inputs: same snapshot always yields the same report.
+ *
+ * @param sectors - Current live sector snapshot.
+ * @param alerts - Derived alerts from the same snapshot.
+ * @returns A 2–4 sentence situation summary.
+ */
+export function buildSituationReport(sectors: StadiumSector[], alerts: OpsAlert[]): string {
+  if (sectors.length === 0) {
+    return 'No sector telemetry available.';
+  }
+
+  const busiest = sectors.reduce((max, sector) => (sector.density > max.density ? sector : max));
+  const crowdAlerts = alerts.filter((alert) => alert.actionType === 'redirect').length;
+  const hvacAlerts = alerts.filter((alert) => alert.actionType === 'hvac').length;
+
+  const headline =
+    crowdAlerts > 0
+      ? `${crowdAlerts} sector${crowdAlerts > 1 ? 's' : ''} above ${CROWD_ALERT_THRESHOLD}% — ${busiest.name} is hottest at ${busiest.density}% and ${busiest.trend}.`
+      : `All sectors within safe density; ${busiest.name} leads at ${busiest.density}%.`;
+
+  const sustainability =
+    hvacAlerts > 0
+      ? `${hvacAlerts} idle sector${hvacAlerts > 1 ? 's' : ''} eligible for HVAC reduction.`
+      : 'No idle-sector energy savings pending.';
+
+  const greenest = TRANSIT_OPTIONS.find((option) => option.greenest) ?? TRANSIT_OPTIONS[0];
+  const egress = greenest ? ` Recommended egress: ${greenest.label} (greenest, ${greenest.etaMinutes} min).` : '';
+
+  return `${headline} ${sustainability}${egress}`;
 }
 
 /**

@@ -9,7 +9,7 @@
  */
 
 import type { DensityTrend, StadiumSector } from '@/types';
-import { SECTOR_PROFILES, SUSTAINABILITY_IDLE_THRESHOLD, type SectorProfile } from '@/lib/data/venue';
+import { SECTOR_PROFILES, type SectorProfile } from '@/lib/data/venue';
 
 /** Possible matchday phase labels that drive crowd pressure curves. */
 export type MatchPhase = 'arrivals' | 'kickoff' | 'first-half' | 'half-time' | 'second-half' | 'egress';
@@ -152,7 +152,10 @@ export function generateLiveSignals(epochMs: number = Date.now()): StadiumSector
       zone: profile.zone,
       density,
       capacity: profile.capacity,
-      hvacStatus: density < SUSTAINABILITY_IDLE_THRESHOLD ? 'reduced' : 'active',
+      // HVAC starts 'active'; it becomes 'reduced' only when a staff operator
+      // executes an HVAC action on an idle sector. That keeps sustainability a
+      // real decision loop rather than an automatic property of occupancy.
+      hvacStatus: 'active',
       trend: trendFor(profile, epochMs)
     };
   });

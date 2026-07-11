@@ -58,7 +58,9 @@ export async function POST(request: Request): Promise<Response> {
         for await (const token of streamChatAnswer(provider, parsed.data)) {
           controller.enqueue(encoder.encode(token));
         }
-      } catch {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown stream error';
+        console.error('[chat/route] stream failure:', message);
         controller.enqueue(encoder.encode('PACE is temporarily unavailable. Please retry from a nearby help point.'));
       } finally {
         controller.close();

@@ -1,4 +1,4 @@
-import { applyAlertAction, computeKpis, deriveAlerts } from '@/lib/services/opsService';
+import { applyAlertAction, buildSituationReport, computeKpis, deriveAlerts } from '@/lib/services/opsService';
 import { CROWD_ALERT_THRESHOLD, REDIRECT_TARGET, SUSTAINABILITY_IDLE_THRESHOLD } from '@/lib/data/venue';
 import type { StadiumSector } from '@/types';
 
@@ -73,6 +73,27 @@ describe('opsService.applyAlertAction', () => {
       hvacAlert
     );
     expect(next.find((sector) => sector.id === hvacAlert.sectorId)!.hvacStatus).toBe('reduced');
+  });
+});
+
+describe('opsService.buildSituationReport', () => {
+  it('names the hottest sector and surfaces outstanding crowd + transit guidance', () => {
+    const alerts = deriveAlerts(sample);
+    const report = buildSituationReport(sample, alerts);
+
+    expect(report).toContain('East Concourse'); // busiest sector (90%)
+    expect(report).toContain('NJ Transit Rail'); // greenest egress option
+    expect(report).toMatch(/above 85%/);
+  });
+
+  it('reports safe status when no crowd alerts exist', () => {
+    const calm = sample.map((sector) => ({ ...sector, density: 55 }));
+    const report = buildSituationReport(calm, deriveAlerts(calm));
+    expect(report).toContain('within safe density');
+  });
+
+  it('handles an empty snapshot without throwing', () => {
+    expect(buildSituationReport([], [])).toBe('No sector telemetry available.');
   });
 });
 

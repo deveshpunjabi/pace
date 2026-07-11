@@ -14,7 +14,10 @@ describe('simulation.generateLiveSignals', () => {
     for (const sector of sectors) {
       expect(sector.density).toBeGreaterThanOrEqual(5);
       expect(sector.density).toBeLessThanOrEqual(98);
-      expect(['active', 'reduced']).toContain(sector.hvacStatus);
+      // HVAC must start 'active': reduction is a staff decision (executed via
+      // an HVAC alert), never an automatic property of low occupancy. This
+      // guards the sustainability decision loop against becoming a no-op.
+      expect(sector.hvacStatus).toBe('active');
     }
   });
 

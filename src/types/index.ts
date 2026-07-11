@@ -50,10 +50,10 @@ export interface StadiumSector {
 }
 
 /** Alert severity levels used for prioritized triage in the ops queue. */
-export type AlertSeverity = 'low' | 'medium' | 'high';
+export type AlertSeverity = 'medium' | 'high';
 
 /** Type of mitigation action an alert recommends. */
-export type AlertActionType = 'redirect' | 'hvac' | 'monitor';
+export type AlertActionType = 'redirect' | 'hvac';
 
 /**
  * An AI-derived operational alert with a recommended mitigation action.

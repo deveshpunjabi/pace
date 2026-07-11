@@ -25,6 +25,16 @@ function buildAnswer(request: AiChatRequest): string {
   const latest = request.messages[request.messages.length - 1]?.content.toLowerCase() ?? '';
 
   if (request.role === 'staff') {
+    // A "trilingual announcement" request must actually produce EN/ES/FR text,
+    // not just describe it — otherwise the staff quick-command overpromises.
+    if (latest.includes('trilingual') || latest.includes('announcement') || latest.includes('announce')) {
+      return [
+        `- EN: Please avoid East Concourse due to heavy crowding. Follow blue signs to ${REDIRECT_TARGET}; step-free guests use Gate N2 and Accessible Lift A.`,
+        `- ES: Evite East Concourse por aglomeracion. Siga las senales azules hacia ${REDIRECT_TARGET}; personas con movilidad reducida usen Gate N2 y Accessible Lift A.`,
+        `- FR: Evitez East Concourse (forte affluence). Suivez les panneaux bleus vers ${REDIRECT_TARGET}; acces PMR par Gate N2 et Accessible Lift A.`
+      ].join('\n');
+    }
+
     return [
       '- Priority: high',
       `- Crowd Management: redirect fans from East Concourse to ${REDIRECT_TARGET} while opening overflow lanes.`,

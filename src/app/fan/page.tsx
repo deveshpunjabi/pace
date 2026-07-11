@@ -9,34 +9,14 @@
 import Link from 'next/link';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { FanChat } from '@/components/fan/FanChat';
+import { VenueMap } from '@/components/fan/VenueMap';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CROWD_ALERT_THRESHOLD, VENUE_NAME } from '@/lib/data/venue';
+import { VENUE_NAME } from '@/lib/data/venue';
 import { generateLiveSignals } from '@/lib/simulation/liveSignals';
 
-/** Density threshold for the 'moderate' (amber) color band on the mini-map. */
-const MODERATE_DENSITY_THRESHOLD = 60;
-
-/**
- * Returns a Tailwind background class based on sector density level.
- *
- * @param density - Current density percentage (0-100).
- * @returns CSS class string for the density indicator color.
- */
-function sectorColor(density: number): string {
-  if (density >= CROWD_ALERT_THRESHOLD) {
-    return 'bg-red-400';
-  }
-
-  if (density >= MODERATE_DENSITY_THRESHOLD) {
-    return 'bg-amber-400';
-  }
-
-  return 'bg-emerald-400';
-}
-
-/** Fan mobile page with density mini-map and AI concierge chat. */
+/** Fan mobile page with a live accessible route map and AI concierge chat. */
 export default function FanPage(): React.ReactElement {
   const sectors = generateLiveSignals();
 
@@ -55,24 +35,7 @@ export default function FanPage(): React.ReactElement {
 
       <Card>
         <CardContent className="p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-300">Live crowd near you</p>
-          <div className="mt-3 grid grid-cols-3 gap-2" aria-label="Mobile density map">
-            {sectors.map((sector) => (
-              <div className="rounded-xl border border-white/10 bg-slate-950/50 p-2" key={sector.id}>
-                <div
-                  aria-label={`${sector.name} density ${sector.density}%`}
-                  aria-valuemax={100}
-                  aria-valuemin={0}
-                  aria-valuenow={sector.density}
-                  className={`h-12 rounded-lg ${sectorColor(sector.density)}`}
-                  role="progressbar"
-                />
-                <p className="mt-1.5 truncate text-[11px] font-bold text-slate-300">
-                  {sector.id} · {sector.density}%
-                </p>
-              </div>
-            ))}
-          </div>
+          <VenueMap sectors={sectors} />
         </CardContent>
       </Card>
 
